@@ -1,0 +1,41 @@
+# COVID-19 Vaccination vs Death Analysis
+# Visualizing the relationship between vaccination rates and total deaths by U.S. state
+
+library(tidyverse)
+
+vacc_df <- read_csv("covid_vaccinations_by_state.csv")
+deaths_df <- read_csv("covid_deaths_by_state.csv")
+
+vacc_df <- vacc_df %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"))
+
+deaths_df <- deaths_df %>%
+  mutate(end_date = as.Date(end_date, format = "%m/%d/%Y"))
+
+latest_vacc <- vacc_df %>%
+  arrange(Date) %>%
+  group_by(Location) %>%
+  slice_tail(n = 1)
+
+latest_deaths <- deaths_df %>%
+  arrange(end_date) %>%
+  group_by(state) %>%
+  slice_tail(n = 1)
+
+merged_df <- inner_join(
+  latest_vacc,
+  latest_deaths,
+  by = c("Location" = "state")
+)
+
+ggplot(merged_df, aes(x = Series_Complete_Pop_Pct, y = tot_deaths)) +
+  geom_point(color = "darkred", alpha = 0.7, size = 3) +
+  geom_smooth(method = "lm", color = "blue", se = FALSE, linetype = "dashed") +
+  geom_text(aes(label = Location), vjust = -1, size = 3.2, alpha = 0.7) +
+  labs(
+    title = "COVID-19 Vaccination Rate vs. Total Deaths by State",
+    x = "Vaccination Rate (%)",
+    y = "Total COVID-19 Deaths",
+    caption = "Source: CDC | Visualization by [Your Name]"
+  ) +
+  theme_minimal()
